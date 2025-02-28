@@ -2,12 +2,13 @@ package telegramclient
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
 func (c *Client) GetUpdates() ([]Update, error) {
 
-	const op = "getUptates"
+	const op = "getUpdates"
 
 	query := fmt.Sprintf(queryTemplate, c.cfg.Token, op)
 	resp, err := c.client.Get(query)
@@ -16,11 +17,20 @@ func (c *Client) GetUpdates() ([]Update, error) {
 	}
 	defer resp.Body.Close()
 
-	var updates []Update
-	err = json.NewDecoder(resp.Body).Decode(&updates)
+	var response Response
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return []Update{}, err
 	}
 
+	if !response.OK {
+		return []Update{}, errors.New(response.Description)
+	}
+
+	var updates []Update
+	err = json.Unmarshal(response.Result, &updates)
+	if err != nil {
+		return []Update{}, err
+	}
 	return updates, nil
 }

@@ -3,6 +3,7 @@ package telegramclient
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -14,7 +15,10 @@ func (c *Client) SendMessage(chatID int, text string) (Message, error) {
 		Text   string `json:"text"`
 	}
 
-	newMsg := newMessage{ChatID: chatID, Text: text}
+	newMsg := newMessage{
+		ChatID: chatID,
+		Text:   text,
+	}
 
 	query := fmt.Sprintf(queryTemplate, c.cfg.Token, op)
 	newMsgJSON, err := json.Marshal(newMsg)
@@ -28,11 +32,20 @@ func (c *Client) SendMessage(chatID int, text string) (Message, error) {
 	}
 	defer resp.Body.Close()
 
-	var message Message
-	err = json.NewDecoder(resp.Body).Decode(&message)
+	var response Response
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return Message{}, err
 	}
 
+	if !response.OK {
+		return Message{}, errors.New(response.Description)
+	}
+
+	var message Message
+	err = json.Unmarshal(response.Result, &message)
+	if err != nil {
+		return Message{}, err
+	}
 	return message, nil
 }
