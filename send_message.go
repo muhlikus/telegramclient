@@ -20,6 +20,17 @@ func (c *Client) SendMessage(chatID int, text string) (Message, error) {
 		Text:   text,
 	}
 
+	//
+	// another way to create newMsg
+	//
+	// newMsg := struct {
+	// 	ChatID int    `json:"chat_id"`
+	// 	Text   string `json:"text"`
+	// }{
+	// 	ChatID: chatID,
+	// 	Text:   text,
+	// }
+
 	query := fmt.Sprintf(queryTemplate, c.cfg.Token, op)
 	newMsgJSON, err := json.Marshal(newMsg)
 	if err != nil {
