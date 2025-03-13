@@ -5,58 +5,62 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"path"
 )
 
-func (c *Client) SendMessage(chatID int, text string) (Message, error) {
-	const op = "sendMessage"
-
-	type newMessage struct {
+func (c *Client) SendMessage(chatID int, text string) (*Message, error) {
+	newMsg := struct {
 		ChatID int    `json:"chat_id"`
 		Text   string `json:"text"`
-	}
-
-	newMsg := newMessage{
+	}{
 		ChatID: chatID,
 		Text:   text,
 	}
 
-	//
-	// another way to create newMsg
-	//
-	// newMsg := struct {
-	// 	ChatID int    `json:"chat_id"`
-	// 	Text   string `json:"text"`
-	// }{
-	// 	ChatID: chatID,
-	// 	Text:   text,
-	// }
+	reqURL := url.URL{
+		Scheme: c.cfg.botApiScheme,
+		Host:   c.cfg.botApiHost,
+		Path:   path.Join(c.cfg.botApiPath, sendMessageMethod),
+	}
 
-	query := fmt.Sprintf(queryTemplate, c.cfg.Token, op)
 	newMsgJSON, err := json.Marshal(newMsg)
 	if err != nil {
-		return Message{}, err
+		return nil, err
 	}
 
-	resp, err := c.client.Post(query, "application/json", bytes.NewReader(newMsgJSON))
+	req, err := http.NewRequest(http.MethodPost, reqURL.String(), bytes.NewReader(newMsgJSON))
 	if err != nil {
-		return Message{}, err
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
 
 	var response Response
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return Message{}, err
+		return nil, err
 	}
 
 	if !response.OK {
-		return Message{}, errors.New(response.Description)
+		return nil, errors.New(response.Description)
 	}
 
 	var message Message
 	err = json.Unmarshal(response.Result, &message)
 	if err != nil {
-		return Message{}, err
+		return nil, err
 	}
-	return message, nil
+	return &message, nil
 }

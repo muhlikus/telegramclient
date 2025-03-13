@@ -1,17 +1,17 @@
 package telegramclient
 
-type Response struct {
-	OK          bool   `json:"ok"`
-	Description string `json:"description,omitempty"`
-	Result      []byte `json:"result,omitempty"`
-	ErrorCode   int    `json:"error_code,omitempty"`
-}
+import "encoding/json"
 
-//type Updates []Updates
+type Response struct {
+	OK          bool            `json:"ok"`
+	Description string          `json:"description"`
+	Result      json.RawMessage `json:"result"`
+	ErrorCode   int             `json:"error_code"`
+}
 
 type Update struct {
 	UpdateID int     `json:"update_id"`
-	Message  Message `json:"message,omitempty"`
+	Message  Message `json:"message"`
 }
 
 type Message struct {
