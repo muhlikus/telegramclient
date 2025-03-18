@@ -3,7 +3,6 @@ package telegramclient
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -50,17 +49,17 @@ func (c *Client) SendMessage(chatID int, text string) (*Message, error) {
 	var response Response
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing response JSON: %d", err)
 	}
 
 	if !response.OK {
-		return nil, errors.New(response.Description)
+		return nil, fmt.Errorf("response not OK: %s", response.Description)
 	}
 
 	var message Message
 	err = json.Unmarshal(response.Result, &message)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing message JSON: %d", err)
 	}
 	return &message, nil
 }

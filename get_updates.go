@@ -2,7 +2,6 @@ package telegramclient
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -35,17 +34,17 @@ func (c *Client) GetUpdates() ([]Update, error) {
 	var response Response
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing response JSON: %d", err)
 	}
 
 	if !response.OK {
-		return nil, errors.New(response.Description)
+		return nil, fmt.Errorf("response not OK: %s", response.Description)
 	}
 
 	var updates []Update
 	err = json.Unmarshal(response.Result, &updates)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing updates JSON: %d", err)
 	}
 	return updates, nil
 }

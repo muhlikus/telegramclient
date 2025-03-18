@@ -18,8 +18,9 @@ func TestGetUpdates(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		errorExpected assert.ErrorAssertionFunc
+		name            string
+		errorExpected   assert.ErrorAssertionFunc
+		expectedUpdates []Update
 		args
 	}{
 		{
@@ -29,17 +30,55 @@ func TestGetUpdates(t *testing.T) {
 				httpStatusCode: http.StatusOK,
 				httpBody:       `{ "ok": true, "description": "OK", "result": [{ "update_id": 1 }] }`,
 			},
-			errorExpected: assert.NoError,
+			expectedUpdates: []Update{{UpdateID: 1}},
+			errorExpected:   assert.NoError,
 		},
 		{
-			name: "EnxpectedStatusCode",
+			name: "UnexpectedStatusCode",
 			args: args{
 				token:          "SomeToken",
-				httpStatusCode: http.StatusBadRequest,
+				httpStatusCode: http.StatusBadRequest, //400
 				httpBody:       `{ "ok": true, "description": "Not OK", "result": [{ "update_id": 1 }] }`,
 			},
+			expectedUpdates: nil,
 			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
-				return assert.ErrorIs(tt, err, errEmptyToken)
+				return assert.ErrorContains(tt, err, "unexpected status code") && assert.ErrorContains(tt, err, "400")
+			},
+		},
+		{
+			name: "InvalidResponseJSON",
+			args: args{
+				token:          "SomeToken",
+				httpStatusCode: http.StatusOK,
+				httpBody:       `{ "ok" = true, "description" = "Not OK", "result": [{ "updateId": 1 }] }`,
+			},
+			expectedUpdates: nil,
+			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(tt, err, "parsing response JSON")
+			},
+		},
+		{
+			name: "ResponseNotOK",
+			args: args{
+				token:          "SomeToken",
+				httpStatusCode: http.StatusOK,
+				httpBody:       `{ "ok": false, "description": "Not OK"}`,
+			},
+			expectedUpdates: nil,
+			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(tt, err, "response not OK")
+			},
+		},
+		{
+			name: "InvalidResultJSON",
+			args: args{
+				token:          "SomeToken",
+				httpStatusCode: http.StatusOK,
+				httpBody:       `{ "ok": true, "description": "OK", "result": "updateId := 1" }] }`,
+			},
+			expectedUpdates: nil,
+			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(tt, err, "parsing updates JSON")
 			},
 		},
 	}
@@ -65,7 +104,7 @@ func TestGetUpdates(t *testing.T) {
 
 			updates, err := client.GetUpdates()
 			tt.errorExpected(t, err)
-			_ = updates
+			assert.Equal(t, tt.expectedUpdates, updates)
 		})
 	}
 }
