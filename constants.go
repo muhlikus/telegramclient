@@ -1,6 +1,7 @@
 package telegramclient
 
 const (
-	getUpdatesMethod  = "getUpdates"
-	sendMessageMethod = "sendMessage"
+	getUpdatesMethod   = "getUpdates"
+	sendMessageMethod  = "sendMessage"
+	sendDocumentMethod = "sendDocument"
 )
