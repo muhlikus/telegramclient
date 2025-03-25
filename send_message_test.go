@@ -12,11 +12,14 @@ import (
 
 func TestSendMessage(t *testing.T) {
 	type args struct {
-		token              string
-		chatID             int
-		text               string
-		expectedStatusCode int
-		expectedBody       string
+		token  string
+		chatID int
+		text   string
+	}
+
+	type response struct {
+		StatusCode int
+		Body       string
 	}
 
 	tests := []struct {
@@ -24,15 +27,18 @@ func TestSendMessage(t *testing.T) {
 		expectedError   assert.ErrorAssertionFunc
 		expectedMessage *Message
 		args
+		response
 	}{
 		{
 			name: "ValidResponse",
 			args: args{
-				token:              "SomeToken",
-				chatID:             1,
-				text:               "Hello",
-				expectedStatusCode: http.StatusOK,
-				expectedBody:       `{ "ok": true, "result": { "message_id": 123, "text": "Hello", "chat": {"id": 1} } }`,
+				token:  "SomeToken",
+				chatID: 1,
+				text:   "Hello",
+			},
+			response: response{
+				StatusCode: http.StatusOK,
+				Body:       `{ "ok": true, "result": { "message_id": 123, "text": "Hello", "chat": {"id": 1} } }`,
 			},
 			expectedMessage: &Message{MessageId: 123, Text: "Hello", Chat: Chat{Id: 1}},
 			expectedError:   assert.NoError,
@@ -40,11 +46,13 @@ func TestSendMessage(t *testing.T) {
 		{
 			name: "UnexpectedStatusCode",
 			args: args{
-				token:              "SomeToken",
-				chatID:             1,
-				text:               "Hello",
-				expectedStatusCode: http.StatusBadRequest, //400
-				expectedBody:       `{ "ok": true, "result": { "message_id": 123, "text": "Hello", "chat": {"id": 1} } }`,
+				token:  "SomeToken",
+				chatID: 1,
+				text:   "Hello",
+			},
+			response: response{
+				StatusCode: http.StatusBadRequest, //400
+				Body:       `{ "ok": true, "result": { "message_id": 123, "text": "Hello", "chat": {"id": 1} } }`,
 			},
 			expectedMessage: nil,
 			expectedError: func(tt assert.TestingT, err error, i ...interface{}) bool {
@@ -54,11 +62,13 @@ func TestSendMessage(t *testing.T) {
 		{
 			name: "InvalidResponseJSON",
 			args: args{
-				token:              "SomeToken",
-				chatID:             1,
-				text:               "Hello",
-				expectedStatusCode: http.StatusOK,
-				expectedBody:       `{ "ok" = true, "result": { "message_id": 123, "text": "Hello", "chat": {"id": 1} } }`,
+				token:  "SomeToken",
+				chatID: 1,
+				text:   "Hello",
+			},
+			response: response{
+				StatusCode: http.StatusOK,
+				Body:       `{ "ok" = true, "result": { "message_id": 123, "text": "Hello", "chat": {"id": 1} } }`,
 			},
 			expectedMessage: nil,
 			expectedError: func(tt assert.TestingT, err error, i ...interface{}) bool {
@@ -68,11 +78,13 @@ func TestSendMessage(t *testing.T) {
 		{
 			name: "ResponseNotOK",
 			args: args{
-				token:              "SomeToken",
-				chatID:             1,
-				text:               "Hello",
-				expectedStatusCode: http.StatusOK,
-				expectedBody:       `{ "ok": false, "description": "Some error" }`,
+				token:  "SomeToken",
+				chatID: 1,
+				text:   "Hello",
+			},
+			response: response{
+				StatusCode: http.StatusOK,
+				Body:       `{ "ok": false, "description": "Some error" }`,
 			},
 			expectedMessage: nil,
 			expectedError: func(tt assert.TestingT, err error, i ...interface{}) bool {
@@ -82,11 +94,13 @@ func TestSendMessage(t *testing.T) {
 		{
 			name: "InvalidResultJSON",
 			args: args{
-				token:              "SomeToken",
-				chatID:             1,
-				text:               "Hello",
-				expectedStatusCode: http.StatusOK,
-				expectedBody:       `{ "ok": true, "result": "{ unknown_key = unknown_value }" }`,
+				token:  "SomeToken",
+				chatID: 1,
+				text:   "Hello",
+			},
+			response: response{
+				StatusCode: http.StatusOK,
+				Body:       `{ "ok": true, "result": "{ unknown_key = unknown_value }" }`,
 			},
 			expectedMessage: nil,
 			expectedError: func(tt assert.TestingT, err error, i ...interface{}) bool {
@@ -100,8 +114,8 @@ func TestSendMessage(t *testing.T) {
 			server := httptest.NewServer(
 				http.HandlerFunc(
 					func(w http.ResponseWriter, r *http.Request) {
-						w.WriteHeader(tt.args.expectedStatusCode)
-						_, _ = w.Write([]byte(tt.args.expectedBody))
+						w.WriteHeader(tt.response.StatusCode)
+						_, _ = w.Write([]byte(tt.response.Body))
 					}))
 			defer server.Close()
 

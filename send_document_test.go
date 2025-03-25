@@ -1,10 +1,10 @@
 package telegramclient
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,11 +14,13 @@ import (
 func TestSendDocument(t *testing.T) {
 
 	type args struct {
-		token  string
-		chatID int
+		token       string
+		chatID      int
+		fileName    string
+		fileContent string
 	}
 
-	type mocks struct {
+	type response struct {
 		StatusCode int
 		Body       string
 	}
@@ -28,35 +30,40 @@ func TestSendDocument(t *testing.T) {
 		expectedError   assert.ErrorAssertionFunc
 		expectedMessage *Message
 		args
-		mocks
+		response
 	}{
 		{
-			name: "ValidResponse",
+			name: "OK",
 			args: args{
-				token:  "SomeToken",
-				chatID: 1,
+				token:       "SomeToken",
+				chatID:      1,
+				fileName:    "testfile.txt",
+				fileContent: "test content",
 			},
-			mocks: mocks{
+			response: response{
 				StatusCode: http.StatusOK,
 				Body:       `{ "ok": true, "result": { "message_id": 123, "document": {"file_id": "fileIdentificator"} } }`,
 			},
 			expectedMessage: &Message{MessageId: 123, Document: Document{FileID: "fileIdentificator"}},
 			expectedError:   assert.NoError,
 		},
-	}
-
-	// Create a temporary file to simulate the document to be sent
-	tmpFile, err := os.CreateTemp("", "testfile")
-	if err != nil {
-		t.Fatalf("creating temp file: %v", err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	// Write some content to the temporary file
-	if _, err := tmpFile.Write([]byte("test content")); err != nil {
-		t.Fatalf("writing to temp file: %v", err)
-	}
-	tmpFile.Close()
+		{
+			name: "UnexpectedStatusCode",
+			args: args{
+				token:       "SomeToken",
+				chatID:      1,
+				fileName:    "testfile.txt",
+				fileContent: "test content",
+			},
+			response: response{
+				StatusCode: http.StatusBadRequest,
+				Body:       `{ "ok": true, "result": { "message_id": 123, "document": {"file_id": "fileIdentificator"} } }`,
+			},
+			expectedMessage: nil,
+			expectedError: func(tt assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(tt, err, "unexpected status code") && assert.ErrorContains(tt, err, "400")
+			},
+		}}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -64,8 +71,8 @@ func TestSendDocument(t *testing.T) {
 			server := httptest.NewServer(
 				http.HandlerFunc(
 					func(w http.ResponseWriter, r *http.Request) {
-						w.WriteHeader(tt.mocks.StatusCode)
-						_, _ = w.Write([]byte(tt.mocks.Body))
+						w.WriteHeader(tt.response.StatusCode)
+						_, _ = w.Write([]byte(tt.response.Body))
 					}))
 			defer server.Close()
 
@@ -78,7 +85,9 @@ func TestSendDocument(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			message, err := client.SendDocument(tt.chatID, tmpFile.Name())
+			fileBuffer := bytes.NewBufferString(tt.fileContent)
+
+			message, err := client.SendDocument(tt.chatID, tt.fileName, fileBuffer)
 			tt.expectedError(t, err)
 			assert.Equal(t, tt.expectedMessage, message)
 		})

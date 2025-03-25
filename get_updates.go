@@ -9,7 +9,6 @@ import (
 )
 
 func (c *Client) GetUpdates() ([]Update, error) {
-
 	reqURL := url.URL{
 		Scheme: c.cfg.botApiScheme,
 		Host:   c.cfg.botApiHost,
@@ -18,12 +17,12 @@ func (c *Client) GetUpdates() ([]Update, error) {
 
 	req, err := http.NewRequest(http.MethodGet, reqURL.String(), http.NoBody)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -46,5 +45,6 @@ func (c *Client) GetUpdates() ([]Update, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing updates JSON: %d", err)
 	}
+
 	return updates, nil
 }

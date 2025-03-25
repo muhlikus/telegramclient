@@ -12,9 +12,12 @@ import (
 
 func TestGetUpdates(t *testing.T) {
 	type args struct {
-		token          string
-		httpStatusCode int
-		httpBody       string
+		token string
+	}
+
+	type response struct {
+		StatusCode int
+		Body       string
 	}
 
 	tests := []struct {
@@ -22,23 +25,28 @@ func TestGetUpdates(t *testing.T) {
 		errorExpected   assert.ErrorAssertionFunc
 		expectedUpdates []Update
 		args
+		response
 	}{
 		{
-			name: "ValidResponse",
+			name: "Success",
 			args: args{
-				token:          "SomeToken",
-				httpStatusCode: http.StatusOK,
-				httpBody:       `{ "ok": true, "description": "OK", "result": [{ "update_id": 1 }] }`,
+				token: "SomeToken",
+			},
+			response: response{
+				StatusCode: http.StatusOK,
+				Body:       `{ "ok": true, "description": "OK", "result": [{ "update_id": 1 }] }`,
 			},
 			expectedUpdates: []Update{{UpdateID: 1}},
 			errorExpected:   assert.NoError,
 		},
 		{
-			name: "UnexpectedStatusCode",
+			name: "Error - UnexpectedStatusCode",
 			args: args{
-				token:          "SomeToken",
-				httpStatusCode: http.StatusBadRequest, //400
-				httpBody:       `{ "ok": true, "description": "Not OK", "result": [{ "update_id": 1 }] }`,
+				token: "SomeToken",
+			},
+			response: response{
+				StatusCode: http.StatusBadRequest, //400
+				Body:       `{ "ok": true, "description": "Not OK", "result": [{ "update_id": 1 }] }`,
 			},
 			expectedUpdates: nil,
 			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
@@ -46,11 +54,13 @@ func TestGetUpdates(t *testing.T) {
 			},
 		},
 		{
-			name: "InvalidResponseJSON",
+			name: "Error - InvalidResponseJSON",
 			args: args{
-				token:          "SomeToken",
-				httpStatusCode: http.StatusOK,
-				httpBody:       `{ "ok" = true, "description" = "Not OK", "result": [{ "updateId": 1 }] }`,
+				token: "SomeToken",
+			},
+			response: response{
+				StatusCode: http.StatusOK,
+				Body:       `{ "ok" = true, "description" = "Not OK", "result": [{ "updateId": 1 }] }`,
 			},
 			expectedUpdates: nil,
 			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
@@ -58,11 +68,13 @@ func TestGetUpdates(t *testing.T) {
 			},
 		},
 		{
-			name: "ResponseNotOK",
+			name: "Error - ResponseNotOK",
 			args: args{
-				token:          "SomeToken",
-				httpStatusCode: http.StatusOK,
-				httpBody:       `{ "ok": false, "description": "Not OK"}`,
+				token: "SomeToken",
+			},
+			response: response{
+				StatusCode: http.StatusOK,
+				Body:       `{ "ok": false, "description": "Not OK"}`,
 			},
 			expectedUpdates: nil,
 			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
@@ -70,11 +82,13 @@ func TestGetUpdates(t *testing.T) {
 			},
 		},
 		{
-			name: "InvalidResultJSON",
+			name: "Error - InvalidResultJSON",
 			args: args{
-				token:          "SomeToken",
-				httpStatusCode: http.StatusOK,
-				httpBody:       `{ "ok": true, "description": "OK", "result": "updateId := 1" }] }`,
+				token: "SomeToken",
+			},
+			response: response{
+				StatusCode: http.StatusOK,
+				Body:       `{ "ok": true, "description": "OK", "result": "updateId := 1" }] }`,
 			},
 			expectedUpdates: nil,
 			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
@@ -84,12 +98,11 @@ func TestGetUpdates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			server := httptest.NewServer(
 				http.HandlerFunc(
 					func(w http.ResponseWriter, r *http.Request) {
-						w.WriteHeader(tt.args.httpStatusCode)
-						_, _ = w.Write([]byte(tt.args.httpBody))
+						w.WriteHeader(tt.response.StatusCode)
+						_, _ = w.Write([]byte(tt.response.Body))
 					}))
 			defer server.Close()
 

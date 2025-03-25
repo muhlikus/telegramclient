@@ -26,19 +26,19 @@ func (c *Client) SendMessage(chatID int, text string) (*Message, error) {
 
 	newMsgJSON, err := json.Marshal(newMsg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("marshaling message for send: %w", err)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, reqURL.String(), bytes.NewReader(newMsgJSON))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -61,5 +61,6 @@ func (c *Client) SendMessage(chatID int, text string) (*Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing message JSON: %d", err)
 	}
+
 	return &message, nil
 }

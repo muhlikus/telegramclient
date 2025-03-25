@@ -4,43 +4,28 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 )
 
-func (c *Client) SendDocument(chatID int, filePath string) (*Message, error) {
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("opening file: %w", err)
-	}
-	defer file.Close()
-
-	reqURL := url.URL{
-		Scheme: c.cfg.botApiScheme,
-		Host:   c.cfg.botApiHost,
-		Path:   path.Join(c.cfg.botApiPath, sendDocumentMethod),
-	}
-
+func (c *Client) SendDocument(chatID int, fileName string, fileBuff *bytes.Buffer) (*Message, error) {
 	buf := new(bytes.Buffer)
 	writer := multipart.NewWriter(buf)
 
 	writer.WriteField("chat_id", strconv.Itoa(chatID))
 
-	part, err := writer.CreateFormFile("document", filepath.Base(filePath))
+	part, err := writer.CreateFormFile("document", filepath.Base(fileName))
 	if err != nil {
-		return nil, fmt.Errorf("creating form file: %w", err)
+		return nil, fmt.Errorf("form file creation: %w", err)
 	}
 
-	_, err = io.Copy(part, file)
+	_, err = part.Write(fileBuff.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("copying file: %w", err)
+		return nil, fmt.Errorf("write file to mime object: %w", err)
 	}
 
 	// we need to close writer for:
@@ -50,16 +35,21 @@ func (c *Client) SendDocument(chatID int, filePath string) (*Message, error) {
 		return nil, fmt.Errorf("closing writer: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, reqURL.String(), buf)
-	if err != nil {
-		return nil, err
+	reqURL := url.URL{
+		Scheme: c.cfg.botApiScheme,
+		Host:   c.cfg.botApiHost,
+		Path:   path.Join(c.cfg.botApiPath, sendDocumentMethod),
 	}
 
+	req, err := http.NewRequest(http.MethodPost, reqURL.String(), buf)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -68,11 +58,11 @@ func (c *Client) SendDocument(chatID int, filePath string) (*Message, error) {
 	}
 
 	var response Response
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("parsing response JSON: %d", err)
 	}
 
+	// TODO проверить соответсвие response.OK и resp.StatusCode
 	if !response.OK {
 		return nil, fmt.Errorf("response not OK: %s", response.Description)
 	}
@@ -82,5 +72,6 @@ func (c *Client) SendDocument(chatID int, filePath string) (*Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing message JSON: %d", err)
 	}
+
 	return &message, nil
 }
