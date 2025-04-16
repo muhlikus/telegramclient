@@ -13,22 +13,13 @@ type Client struct {
 }
 
 func New(cfg Config) (*Client, error) {
+	err := cfg.validate()
 
-	if cfg.Token == "" {
-		return nil, errEmptyToken
-	}
-
-	// пока сюда вставил значения по умолчанию
-	if cfg.BotApiScheme == "" {
-		cfg.BotApiScheme = "https"
-	}
-	if cfg.BotApiHost == "" {
-		cfg.BotApiHost = "api.telegram.org"
+	if err != nil {
+		return nil, fmt.Errorf("validate config: %w", err)
 	}
 
 	cfg.botApiPath = fmt.Sprintf("/bot%s", cfg.Token)
-	cfg.HttpTimeout = 2000
-	cfg.HttpTLSHandshakeTimeout = 500
 
 	return &Client{
 		client: &http.Client{

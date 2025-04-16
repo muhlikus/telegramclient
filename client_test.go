@@ -9,7 +9,9 @@ import (
 // TestNewClient tests the New function
 func TestNewClient(t *testing.T) {
 	type args struct {
-		token string
+		token        string
+		botApiScheme string
+		botApiHost   string
 	}
 
 	//create table tests
@@ -21,7 +23,9 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "ValidToken",
 			args: args{
-				token: "SomeToken",
+				token:        "SomeToken",
+				botApiScheme: "https",
+				botApiHost:   "api.telegram.org",
 			},
 			errorExpected: assert.NoError,
 		},
@@ -38,7 +42,7 @@ func TestNewClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := New(Config{Token: tt.token})
+			_, err := New(Config{Token: tt.token, BotApiScheme: tt.botApiScheme, BotApiHost: tt.botApiHost})
 			tt.errorExpected(t, err)
 		})
 	}
