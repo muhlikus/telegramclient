@@ -10,8 +10,8 @@ import (
 
 func (c *Client) GetUpdates() ([]Update, error) {
 	reqURL := url.URL{
-		Scheme: c.cfg.botApiScheme,
-		Host:   c.cfg.botApiHost,
+		Scheme: c.cfg.BotApiScheme,
+		Host:   c.cfg.BotApiHost,
 		Path:   path.Join(c.cfg.botApiPath, getUpdatesMethod),
 	}
 

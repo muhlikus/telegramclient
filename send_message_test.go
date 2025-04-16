@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -121,11 +122,11 @@ func TestSendMessage(t *testing.T) {
 
 			urlMock, _ := url.Parse(server.URL)
 
-			client, err := New(Config{
-				Token:        tt.args.token,
-				botApiScheme: urlMock.Scheme,
-				botApiHost:   urlMock.Host,
-			})
+			_ = os.Setenv("TELEGRAM_BOT_TOKEN", tt.args.token)
+			_ = os.Setenv("TELEGRAM_BOT_API_SCHEME", urlMock.Scheme)
+			_ = os.Setenv("TELEGRAM_BOT_API_HOST", urlMock.Host)
+
+			client, err := New(Config{})
 			require.NoError(t, err)
 
 			message, err := client.SendMessage(tt.chatID, tt.text)

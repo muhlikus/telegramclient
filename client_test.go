@@ -1,6 +1,7 @@
 package telegramclient
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,13 +32,14 @@ func TestNewClient(t *testing.T) {
 				token: "",
 			},
 			errorExpected: func(tt assert.TestingT, err error, i ...interface{}) bool {
-				return assert.ErrorIs(tt, err, errEmptyToken)
+				return assert.ErrorContains(tt, err, "parsing config")
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			_ = os.Setenv("TELEGRAM_BOT_TOKEN", tt.token)
 			_, err := New(Config{Token: tt.token})
 			tt.errorExpected(t, err)
 		})

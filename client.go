@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/caarlos0/env/v11"
 )
 
 type Client struct {
@@ -13,32 +15,37 @@ type Client struct {
 }
 
 func New(cfg Config) (*Client, error) {
-
-	if cfg.Token == "" {
-		return nil, errEmptyToken
+	err := env.Parse(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("parsing config: %w", err)
 	}
 
-	// пока сюда вставил значения по умолчанию
-	if cfg.botApiScheme == "" {
-		cfg.botApiScheme = "https"
-	}
-	if cfg.botApiHost == "" {
-		cfg.botApiHost = "api.telegram.org"
-	}
+	// if cfg.Token == "" {
+	// 	return nil, errEmptyToken
+	// }
+
+	// // пока сюда вставил значения по умолчанию
+	// if cfg.botApiScheme == "" {
+	// 	cfg.botApiScheme = "https"
+	// }
+
+	// if cfg.botApiHost == "" {
+	// 	cfg.botApiHost = "api.telegram.org"
+	// }
 
 	cfg.botApiPath = fmt.Sprintf("/bot%s", cfg.Token)
-	cfg.httpTimeout = 2000
-	cfg.httpTLSHandshakeTimeout = 500
+	// cfg.httpTimeout = 2000
+	// cfg.httpTLSHandshakeTimeout = 500
 
 	return &Client{
 		client: &http.Client{
 			Transport: &http.Transport{
-				TLSHandshakeTimeout: cfg.httpTLSHandshakeTimeout * time.Millisecond,
+				TLSHandshakeTimeout: cfg.HttpTLSHandshakeTimeout * time.Millisecond,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
 				},
 			},
-			Timeout: cfg.httpTimeout * time.Millisecond,
+			Timeout: cfg.HttpTimeout * time.Millisecond,
 		},
 		cfg: cfg,
 	}, nil
