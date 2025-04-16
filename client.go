@@ -20,22 +20,7 @@ func New(cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("parsing config: %w", err)
 	}
 
-	// if cfg.Token == "" {
-	// 	return nil, errEmptyToken
-	// }
-
-	// // пока сюда вставил значения по умолчанию
-	// if cfg.botApiScheme == "" {
-	// 	cfg.botApiScheme = "https"
-	// }
-
-	// if cfg.botApiHost == "" {
-	// 	cfg.botApiHost = "api.telegram.org"
-	// }
-
 	cfg.botApiPath = fmt.Sprintf("/bot%s", cfg.Token)
-	// cfg.httpTimeout = 2000
-	// cfg.httpTLSHandshakeTimeout = 500
 
 	return &Client{
 		client: &http.Client{
