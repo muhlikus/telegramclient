@@ -19,26 +19,26 @@ func New(cfg Config) (*Client, error) {
 	}
 
 	// пока сюда вставил значения по умолчанию
-	if cfg.botApiScheme == "" {
-		cfg.botApiScheme = "https"
+	if cfg.BotApiScheme == "" {
+		cfg.BotApiScheme = "https"
 	}
-	if cfg.botApiHost == "" {
-		cfg.botApiHost = "api.telegram.org"
+	if cfg.BotApiHost == "" {
+		cfg.BotApiHost = "api.telegram.org"
 	}
 
 	cfg.botApiPath = fmt.Sprintf("/bot%s", cfg.Token)
-	cfg.httpTimeout = 2000
-	cfg.httpTLSHandshakeTimeout = 500
+	cfg.HttpTimeout = 2000
+	cfg.HttpTLSHandshakeTimeout = 500
 
 	return &Client{
 		client: &http.Client{
 			Transport: &http.Transport{
-				TLSHandshakeTimeout: cfg.httpTLSHandshakeTimeout * time.Millisecond,
+				TLSHandshakeTimeout: cfg.HttpTLSHandshakeTimeout * time.Millisecond,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
 				},
 			},
-			Timeout: cfg.httpTimeout * time.Millisecond,
+			Timeout: cfg.HttpTimeout * time.Millisecond,
 		},
 		cfg: cfg,
 	}, nil

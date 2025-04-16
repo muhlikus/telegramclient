@@ -36,8 +36,8 @@ func (c *Client) SendDocument(chatID int, fileName string, fileBuff *bytes.Buffe
 	}
 
 	reqURL := url.URL{
-		Scheme: c.cfg.botApiScheme,
-		Host:   c.cfg.botApiHost,
+		Scheme: c.cfg.BotApiScheme,
+		Host:   c.cfg.BotApiHost,
 		Path:   path.Join(c.cfg.botApiPath, sendDocumentMethod),
 	}
 

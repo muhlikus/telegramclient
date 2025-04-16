@@ -80,8 +80,8 @@ func TestSendDocument(t *testing.T) {
 
 			client, err := New(Config{
 				Token:        tt.args.token,
-				botApiScheme: urlMock.Scheme,
-				botApiHost:   urlMock.Host,
+				BotApiScheme: urlMock.Scheme,
+				BotApiHost:   urlMock.Host,
 			})
 			require.NoError(t, err)
 
