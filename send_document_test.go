@@ -44,7 +44,7 @@ func TestSendDocument(t *testing.T) {
 				StatusCode: http.StatusOK,
 				Body:       `{ "ok": true, "result": { "message_id": 123, "document": {"file_id": "fileIdentificator"} } }`,
 			},
-			expectedMessage: &Message{MessageId: 123, Document: Document{FileID: "fileIdentificator"}},
+			expectedMessage: &Message{MessageId: 123, Document: &Document{FileID: "fileIdentificator"}},
 			expectedError:   assert.NoError,
 		},
 		{

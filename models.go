@@ -10,16 +10,16 @@ type Response struct {
 }
 
 type Update struct {
-	UpdateID int     `json:"update_id"`
-	Message  Message `json:"message"`
+	UpdateID int      `json:"update_id"`
+	Message  *Message `json:"message"`
 }
 
 type Message struct {
-	MessageId int      `json:"message_id"`
-	Date      int      `json:"date"`
-	Text      string   `json:"text,omitempty"`
-	Chat      Chat     `json:"chat"`
-	Document  Document `json:"document,omitempty"`
+	MessageId int       `json:"message_id"`
+	Date      int       `json:"date"`
+	Text      string    `json:"text,omitempty"`
+	Chat      Chat      `json:"chat"`
+	Document  *Document `json:"document,omitempty"`
 }
 
 type Chat struct {
